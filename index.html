@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IT Grading System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #1a0000, #330000);
+    color: white;
+    margin: 0;
+    padding: 15px;
+}
+
+h1 {
+    text-align: center;
+    color: #ff4d4d;
+    font-size: 22px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    background: #1a1a1a;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #800000;
+}
+
+/* GRID FORM */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.form-grid.full {
+    grid-template-columns: 1fr;
+}
+
+label {
+    font-size: 14px;
+}
+
+input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 5px;
+    border: none;
+}
+
+button {
+    margin-top: 15px;
+    padding: 12px;
+    width: 100%;
+    background: #800000;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background: #b30000;
+}
+
+/* TABLE */
+.table-container {
+    overflow-x: auto;
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+th, td {
+    border: 1px solid #800000;
+    padding: 8px;
+    text-align: center;
+    font-size: 14px;
+}
+
+th {
+    background: #800000;
+}
+
+.pass {
+    color: #00ff99;
+    font-weight: bold;
+}
+
+.fail {
+    color: #ff3333;
+    font-weight: bold;
+}
+
+/* MOBILE */
+@media (max-width: 600px) {
+    h1 {
+        font-size: 18px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    th, td {
+        font-size: 12px;
+        padding: 6px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<h1>IT Grading System</h1>
+
+<div class="container">
+
+    <div class="form-grid">
+        <div>
+            <label>Student Name</label>
+            <input type="text" id="name">
+        </div>
+
+        <div>
+            <label>Section</label>
+            <input type="text" id="section">
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <div>
+            <label>Quiz (20%)</label>
+            <input type="number" id="quiz">
+        </div>
+
+        <div>
+            <label>Laboratory (30%)</label>
+            <input type="number" id="lab">
+        </div>
+
+        <div>
+            <label>Assignment (10%)</label>
+            <input type="number" id="assign">
+        </div>
+
+        <div>
+            <label>Attendance (10%)</label>
+            <input type="number" id="attendance">
+        </div>
+
+        <div class="full">
+            <label>Major Exam (30%)</label>
+            <input type="number" id="exam">
+        </div>
+    </div>
+
+    <button onclick="computeGrade()">Submit</button>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Section</th>
+                    <th>Quiz</th>
+                    <th>Lab</th>
+                    <th>Assignment</th>
+                    <th>Attendance</th>
+                    <th>Exam</th>
+                    <th>Total</th>
+                    <th>Equivalent</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+function computeGrade() {
+    let name = document.getElementById("name").value;
+    let section = document.getElementById("section").value;
+
+    let quiz = parseFloat(document.getElementById("quiz").value) || 0;
+    let lab = parseFloat(document.getElementById("lab").value) || 0;
+    let assign = parseFloat(document.getElementById("assign").value) || 0;
+    let attendance = parseFloat(document.getElementById("attendance").value) || 0;
+    let exam = parseFloat(document.getElementById("exam").value) || 0;
+
+    let total = (quiz * 0.20) + (lab * 0.30) + (assign * 0.10) + (attendance * 0.10) + (exam * 0.30);
+
+    let equivalent = "";
+    if (total >= 90) equivalent = "1.0";
+    else if (total >= 85) equivalent = "1.25";
+    else if (total >= 80) equivalent = "1.5";
+    else if (total >= 75) equivalent = "2.0";
+    else if (total >= 70) equivalent = "2.5";
+    else if (total >= 65) equivalent = "3.0";
+    else equivalent = "5.0";
+
+    let remarks = total >= 75 ? "PASSED" : "FAILED";
+    let className = total >= 75 ? "pass" : "fail";
+
+    let row = `
+        <tr>
+            <td>${name}</td>
+            <td>${section}</td>
+            <td>${quiz}</td>
+            <td>${lab}</td>
+            <td>${assign}</td>
+            <td>${attendance}</td>
+            <td>${exam}</td>
+            <td>${total.toFixed(2)}</td>
+            <td>${equivalent}</td>
+            <td class="${className}">${remarks}</td>
+        </tr>
+    `;
+
+    document.getElementById("tableBody").innerHTML += row;
+
+    // clear inputs
+    document.querySelectorAll("input").forEach(input => input.value = "");
+}
+</script>
+
+</body>
+</html>
