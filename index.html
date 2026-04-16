@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Passi City Bureau of Fire Protection – Incident Response Record System</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --fire:#D93025;--fire-dark:#9B1F17;--fire-light:#F5C6C3;
+  --gold:#F5A623;--gold-dark:#C07D10;
+  --navy:#0A1628;--navy-mid:#112240;--navy-light:#1E3A5F;
+  --smoke:#8A9BB0;--ash:#C8D4E3;--white:#F5F8FC;
+  --success:#1E8C45;--warning:#E07B00;--info:#1565C0;
+  --bg:#0D1B2E;--panel:#112240;--card:#162B4A;--border:#1E3A5F;
+  --text:#E8EFF9;--muted:#8A9BB0;
+  --font-head:'Bebas Neue',sans-serif;
+  --font:'Barlow',sans-serif;
+  --font-cond:'Barlow Condensed',sans-serif;
+  --radius:8px;--radius-lg:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.6}
+input,select,textarea,button{font-family:var(--font);font-size:14px}
+button{cursor:pointer}
+
+/* ─── SCREENS ─── */
+.screen{display:none;height:100vh;overflow-y:auto}
+.screen.active{display:flex;flex-direction:column}
+
+/* ─── LANDING / ROLE SELECT ─── */
+#screen-landing{align-items:center;justify-content:center;background:linear-gradient(160deg,#0A1628 0%,#1A0A00 100%)}
+.landing-wrap{text-align:center;max-width:700px;padding:2rem}
+.fire-icon{font-size:80px;line-height:1;margin-bottom:1rem;filter:drop-shadow(0 0 20px #D93025)}
+.landing-wrap h1{font-family:var(--font-head);font-size:clamp(28px,5vw,52px);letter-spacing:3px;color:var(--white);line-height:1.1;margin-bottom:.5rem}
+.landing-wrap h1 span{color:var(--fire)}
+.landing-wrap .sub{font-size:13px;letter-spacing:4px;color:var(--smoke);text-transform:uppercase;margin-bottom:2.5rem}
+.role-cards{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:2rem}
+.role-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem 2.5rem;width:220px;transition:all .25s;cursor:pointer;position:relative;overflow:hidden}
+.role-card::before{content:'';position:absolute;inset:0;background:var(--fire);opacity:0;transition:.25s}
+.role-card:hover::before{opacity:.08}
+.role-card:hover{border-color:var(--fire);transform:translateY(-4px)}
+.role-card .rc-icon{font-size:40px;margin-bottom:.75rem;display:block}
+.role-card h3{font-family:var(--font-cond);font-size:20px;letter-spacing:1px;color:var(--white);margin-bottom:.4rem}
+.role-card p{font-size:12px;color:var(--muted);line-height:1.5}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:var(--radius);font-size:14px;font-weight:600;border:none;transition:all .2s;text-decoration:none}
+.btn-fire{background:var(--fire);color:#fff}
+.btn-fire:hover{background:var(--fire-dark)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--fire);color:var(--fire)}
+.btn-success{background:var(--success);color:#fff}
+.btn-ghost{background:transparent;color:var(--muted);border:none;font-size:13px;padding:6px 12px}
+.btn-ghost:hover{color:var(--fire)}
+.btn-sm{padding:6px 14px;font-size:12px}
+.btn-danger{background:#9B1F17;color:#fff}
+.btn-info{background:var(--info);color:#fff}
+
+/* ─── TOPBAR ─── */
+.topbar{display:flex;align-items:center;gap:1rem;padding:.75rem 1.5rem;background:var(--navy);border-bottom:2px solid var(--fire);flex-shrink:0;position:sticky;top:0;z-index:100}
+.topbar-logo{font-family:var(--font-head);font-size:20px;letter-spacing:2px;color:var(--white)}
+.topbar-logo span{color:var(--fire)}
+.topbar-sub{font-size:10px;letter-spacing:2px;color:var(--smoke);text-transform:uppercase}
+.topbar-logo-wrap{flex:1}
+.topbar-nav{display:flex;gap:.25rem}
+.nav-tab{background:transparent;border:none;color:var(--muted);padding:8px 16px;border-radius:var(--radius);font-size:13px;font-family:var(--font-cond);letter-spacing:.5px;font-weight:600;transition:.2s}
+.nav-tab:hover{color:var(--white);background:var(--panel)}
+.nav-tab.active{color:var(--fire);background:rgba(217,48,37,.12)}
+.badge{background:var(--fire);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;margin-left:4px}
+
+/* ─── CONTENT AREA ─── */
+.content{flex:1;padding:1.5rem;max-width:1400px;margin:0 auto;width:100%}
+.page{display:none}.page.active{display:block}
+
+/* ─── CARDS ─── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.card-title{font-family:var(--font-cond);font-size:16px;letter-spacing:.5px;color:var(--white);font-weight:600}
+.section-title{font-family:var(--font-head);font-size:28px;letter-spacing:2px;color:var(--white);margin-bottom:.25rem}
+.section-sub{font-size:13px;color:var(--muted);margin-bottom:1.5rem}
+
+/* ─── GRID HELPERS ─── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}}
+
+/* ─── STAT CARDS ─── */
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.red::after{background:var(--fire)}
+.stat-card.gold::after{background:var(--gold)}
+.stat-card.green::after{background:var(--success)}
+.stat-card.blue::after{background:var(--info)}
+.stat-label{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:.5rem}
+.stat-value{font-family:var(--font-head);font-size:42px;letter-spacing:1px;line-height:1;color:var(--white)}
+.stat-icon{position:absolute;right:1rem;top:1rem;font-size:28px;opacity:.25}
+.stat-delta{font-size:12px;color:var(--muted);margin-top:.5rem}
+.stat-delta.up{color:var(--success)}
+
+/* ─── FORM ─── */
+.form-group{margin-bottom:1rem}
+.form-group label{display:block;font-size:12px;letter-spacing:1px;color:var(--smoke);text-transform:uppercase;margin-bottom:.35rem;font-weight:600}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--navy-mid);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:10px 12px;transition:.2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--fire);background:var(--navy)}
+.form-group select option{background:var(--navy-mid)}
+.form-group textarea{resize:vertical;min-height:90px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}}
+.required{color:var(--fire)}
+
+/* ─── TABLE ─── */
+.table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--navy-mid)}
+th{padding:10px 12px;text-align:left;font-family:var(--font-cond);letter-spacing:.5px;color:var(--smoke);font-size:12px;text-transform:uppercase;font-weight:600;white-space:nowrap}
+td{padding:10px 12px;border-top:1px solid var(--border);color:var(--text)}
+tr:hover td{background:rgba(255,255,255,.03)}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.pill-pending{background:rgba(240,123,0,.15);color:#F5A623}
+.pill-responded{background:rgba(30,140,69,.15);color:#4CD97B}
+.pill-resolved{background:rgba(21,101,192,.15);color:#5BA8F5}
+.pill-cancelled{background:rgba(255,255,255,.08);color:var(--muted)}
+
+/* ─── MODAL ─── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;position:relative}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.modal-title{font-family:var(--font-cond);font-size:20px;letter-spacing:.5px;color:var(--white);font-weight:600}
+.modal-close{background:transparent;border:none;color:var(--muted);font-size:22px;line-height:1;cursor:pointer;transition:.2s}
+.modal-close:hover{color:var(--fire)}
+
+/* ─── ALERT ─── */
+.alert{padding:12px 16px;border-radius:var(--radius);font-size:13px;margin-bottom:1rem;display:flex;align-items:flex-start;gap:8px}
+.alert-success{background:rgba(30,140,69,.12);border:1px solid rgba(30,140,69,.3);color:#4CD97B}
+.alert-error{background:rgba(217,48,37,.12);border:1px solid rgba(217,48,37,.3);color:#F5A623}
+.alert-info{background:rgba(21,101,192,.12);border:1px solid rgba(21,101,192,.3);color:#5BA8F5}
+
+/* ─── TIMELINE ─── */
+.timeline{list-style:none}
+.tl-item{display:flex;gap:12px;padding:0 0 1.25rem}
+.tl-item:last-child{padding-bottom:0}
+.tl-dot{width:10px;height:10px;border-radius:50%;background:var(--fire);flex-shrink:0;margin-top:5px;position:relative}
+.tl-dot::before{content:'';position:absolute;left:4px;top:10px;width:2px;height:calc(100% + 12px);background:var(--border)}
+.tl-item:last-child .tl-dot::before{display:none}
+.tl-time{font-size:11px;color:var(--muted);margin-bottom:2px}
+.tl-text{font-size:13px;color:var(--text)}
+
+/* ─── TABS ─── */
+.tab-bar{display:flex;gap:.25rem;border-bottom:1px solid var(--border);margin-bottom:1.25rem}
+.tab-btn{background:transparent;border:none;color:var(--muted);padding:8px 16px;font-size:13px;font-family:var(--font-cond);letter-spacing:.5px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.2s;cursor:pointer}
+.tab-btn.active{color:var(--fire);border-bottom-color:var(--fire)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* ─── SEARCH & FILTER ─── */
+.filters{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem}
+.filters input,.filters select{background:var(--navy-mid);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:8px 12px;font-size:13px;flex:1;min-width:150px}
+.filters input:focus,.filters select:focus{outline:none;border-color:var(--fire)}
+
+/* ─── EMPTY STATE ─── */
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--muted)}
+.empty-state .ei{font-size:48px;margin-bottom:1rem;opacity:.3}
+.empty-state h3{font-family:var(--font-cond);color:var(--smoke);margin-bottom:.5rem}
+
+/* ─── DETAIL SECTION ─── */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.detail-row{padding:.6rem 0;border-bottom:1px solid var(--border)}
+.detail-row:last-child{border-bottom:none}
+.detail-label{font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+.detail-value{font-size:14px;color:var(--text)}
+
+/* ─── CHART CONTAINER ─── */
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
+.chart-box canvas{max-height:260px}
+
+/* ─── USER TRACKER ─── */
+.tracker-header{background:linear-gradient(135deg,var(--fire-dark) 0%,#7B0D08 100%);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem}
+.tracker-header .emoji{font-size:40px}
+.tracker-header h2{font-family:var(--font-head);font-size:26px;letter-spacing:2px;color:var(--white)}
+.tracker-header p{font-size:13px;color:rgba(255,255,255,.7)}
+
+/* ─── PRINT / REPORT ─── */
+@media print{
+  .topbar,.nav-tab,.btn,button{display:none!important}
+  body{background:#fff;color:#000}
+  .card,.stat-card,.chart-box{border:1px solid #ccc;background:#fff}
+}
+
+/* ─── SCROLL ─── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--navy)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+.divider{height:1px;background:var(--border);margin:1.25rem 0}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:.3px}
+.tag-fire{background:rgba(217,48,37,.15);color:var(--fire)}
+.tag-rescue{background:rgba(245,166,35,.15);color:var(--gold)}
+.tag-medical{background:rgba(21,101,192,.15);color:#5BA8F5}
+.tag-hazmat{background:rgba(123,0,200,.15);color:#B088FF}
+.tag-other{background:rgba(255,255,255,.08);color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════
+     LANDING SCREEN
+════════════════════════════════════ -->
+<div id="screen-landing" class="screen active">
+  <div class="landing-wrap">
+    <div class="fire-icon">🔥</div>
+    <h1>PASSI CITY<br><span>Bureau of Fire Protection</span></h1>
+    <p class="sub">Incident Response Record System</p>
+    <div class="role-cards">
+      <div class="role-card" onclick="enterPortal('user')">
+        <span class="rc-icon">🏠</span>
+        <h3>Citizen Portal</h3>
+        <p>Report fire incidents, emergencies, and track your submitted reports.</p>
+      </div>
+      <div class="role-card" onclick="showAdminLogin()">
+        <span class="rc-icon">🛡️</span>
+        <h3>Admin / BFP Officer</h3>
+        <p>Manage incidents, update statuses, view analytics and generate reports.</p>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);letter-spacing:1px;">ALL DATA SAVED LOCALLY &bull; NO INTERNET REQUIRED</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     ADMIN LOGIN MODAL
+════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-admin-login">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title">🛡️ BFP Officer Login</span>
+      <button class="modal-close" onclick="closeModal('modal-admin-login')">&times;</button>
+    </div>
+    <div id="login-alert"></div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="login-user" placeholder="admin" value="admin">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" value="bfp2024">
+    </div>
+    <button class="btn btn-fire" style="width:100%" onclick="doAdminLogin()">Login</button>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:.75rem">Default: admin / bfp2024</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     USER PORTAL
+════════════════════════════════════ -->
+<div id="screen-user" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo-wrap">
+      <div class="topbar-logo">PASSI CITY <span>BFP</span></div>
+      <div class="topbar-sub">Citizen Incident Portal</div>
+    </div>
+    <div class="topbar-nav">
+      <button class="nav-tab active" onclick="showUserPage('user-report',this)">📋 Report Incident</button>
+      <button class="nav-tab" onclick="showUserPage('user-my-reports',this)">📂 My Reports</button>
+      <button class="nav-tab" onclick="showUserPage('user-status',this)">📊 Statistics</button>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="exitPortal()">← Exit</button>
+  </div>
+  <div class="content">
+
+    <!-- REPORT INCIDENT PAGE -->
+    <div id="user-report" class="page active">
+      <div class="tracker-header">
+        <span class="emoji">🚒</span>
+        <div>
+          <h2>REPORT AN INCIDENT</h2>
+          <p>Submit a fire or emergency incident report to the Passi City Bureau of Fire Protection</p>
+        </div>
+      </div>
+      <div id="report-alert"></div>
+      <div class="grid-2">
+        <div>
+          <div class="card" style="margin-bottom:1rem">
+            <div class="card-header"><span class="card-title">👤 Reporter Information</span></div>
+            <div class="form-group">
+              <label>Full Name <span class="required">*</span></label>
+              <input type="text" id="r-name" placeholder="Juan Dela Cruz">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Contact Number <span class="required">*</span></label>
+                <input type="tel" id="r-contact" placeholder="09XX-XXX-XXXX">
+              </div>
+              <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="r-email" placeholder="juan@email.com">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Relation to Incident <span class="required">*</span></label>
+              <select id="r-relation">
+                <option value="">Select relation</option>
+                <option>Victim / Affected Person</option>
+                <option>Witness / Bystander</option>
+                <option>Neighbor</option>
+                <option>Building Owner</option>
+                <option>Business Owner</option>
+                <option>Anonymous Tipster</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">🔥 Incident Details</span></div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Incident Type <span class="required">*</span></label>
+                <select id="r-type">
+                  <option value="">Select type</option>
+                  <option>Structure Fire</option>
+                  <option>Vehicle Fire</option>
+                  <option>Grass / Vegetation Fire</option>
+                  <option>Electrical Fire</option>
+                  <option>Gas Leak</option>
+                  <option>Hazardous Materials</option>
+                  <option>Rescue Operation</option>
+                  <option>Medical Emergency</option>
+                  <option>False Alarm</option>
+                  <option>Other Emergency</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Severity Level <span class="required">*</span></label>
+                <select id="r-severity">
+                  <option value="">Select severity</option>
+                  <option>Critical – Life Threatening</option>
+                  <option>High – Major Damage</option>
+                  <option>Moderate – Contained</option>
+                  <option>Low – Minor Incident</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Date of Incident <span class="required">*</span></label>
+                <input type="date" id="r-date">
+              </div>
+              <div class="form-group">
+                <label>Time of Incident <span class="required">*</span></label>
+                <input type="time" id="r-time">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Exact Address / Location <span class="required">*</span></label>
+              <input type="text" id="r-address" placeholder="e.g. 123 Rizal St., Brgy. Poblacion, Passi City">
+            </div>
+            <div class="form-group">
+              <label>Barangay <span class="required">*</span></label>
+              <select id="r-barangay">
+                <option value="">Select barangay</option>
+                <option>Aglinab</option><option>Agtabo</option><option>Agtambo</option>
+                <option>Alimodias</option><option>Atabay</option><option>Ayaman</option>
+                <option>Bacuranan</option><option>Bagacay</option><option>Balud</option>
+                <option>Baybay</option><option>Buhay</option><option>Buyo</option>
+                <option>Cabunga</option><option>Calapawan</option><option>Callan</option>
+                <option>Canbanugan</option><option>Cansadan</option><option>Capilijan</option>
+                <option>Caseburan</option><option>Dagsaan</option><option>Dalicanan</option>
+                <option>Gines</option><option>Imbalbang</option><option>Imbang</option>
+                <option>Jagdong</option><option>Jalaud</option><option>Lanas</option>
+                <option>Langcaon</option><option>Lucasan</option><option>Mambiranan</option>
+                <option>Man-it</option><option>Mantulang</option><option>Maquiling</option>
+                <option>Nadsadan</option><option>Omio</option><option>Pandan</option>
+                <option>Paniamoran</option><option>Patag</option><option>Poblacion</option>
+                <option>Punong</option><option>Quiling Norte</option><option>Quiling Sur</option>
+                <option>Quipot</option><option>Rojas</option><option>Sablogon</option>
+                <option>Salngan</option><option>San Esteban</option><option>San Mateo</option>
+                <option>Sara</option><option>Serallo</option><option>Tady</option>
+                <option>Talongadian</option><option>Tigum</option><option>Tugas</option>
+                <option>Umingan</option><option>Union</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Estimated Casualties / Injuries</label>
+              <input type="number" id="r-casualties" placeholder="0" min="0">
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:1rem">
+            <div class="card-header"><span class="card-title">📝 Incident Description</span></div>
+            <div class="form-group">
+              <label>Describe the Incident <span class="required">*</span></label>
+              <textarea id="r-desc" rows="5" placeholder="Provide a detailed description of what happened, what you saw, property involved, etc."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Properties Affected</label>
+              <input type="text" id="r-properties" placeholder="e.g. 2-storey residential house, parked vehicles">
+            </div>
+            <div class="form-group">
+              <label>Estimated Property Damage (₱)</label>
+              <input type="number" id="r-damage" placeholder="0" min="0">
+            </div>
+            <div class="form-group">
+              <label>Possible Cause of Incident</label>
+              <select id="r-cause">
+                <option value="">Select if known</option>
+                <option>Electrical Fault / Short Circuit</option>
+                <option>Open Flame / Candle</option>
+                <option>Cooking Fire</option>
+                <option>Smoking Materials</option>
+                <option>Arson / Intentional</option>
+                <option>Gas Leak / Explosion</option>
+                <option>Lightning Strike</option>
+                <option>Children Playing with Fire</option>
+                <option>Mechanical Failure</option>
+                <option>Unknown</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="card" style="margin-bottom:1rem">
+            <div class="card-header"><span class="card-title">🚒 Response Information</span></div>
+            <div class="form-group">
+              <label>Did BFP Respond?</label>
+              <select id="r-bfp-responded">
+                <option value="">Select</option>
+                <option>Yes</option>
+                <option>No</option>
+                <option>Not Yet / Awaiting</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Number of Fire Trucks Deployed (if known)</label>
+              <input type="number" id="r-trucks" placeholder="0" min="0">
+            </div>
+            <div class="form-group">
+              <label>Fire Alarm Level (if declared)</label>
+              <select id="r-alarm">
+                <option value="">Unknown / Not Applicable</option>
+                <option>First Alarm</option>
+                <option>Second Alarm</option>
+                <option>Third Alarm</option>
+                <option>Fourth Alarm</option>
+                <option>General Alarm</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Additional Notes / Witness Statements</label>
+              <textarea id="r-notes" rows="3" placeholder="Any additional information helpful for investigation..."></textarea>
+            </div>
+          </div>
+          <button class="btn btn-fire" style="width:100%;padding:14px;font-size:16px" onclick="submitReport()">🚒 Submit Incident Report</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY REPORTS PAGE -->
+    <div id="user-my-reports" class="page">
+      <div class="section-title">MY REPORTS</div>
+      <div class="section-sub">Track the status of your submitted incident reports</div>
+      <div class="filters">
+        <input type="text" id="u-search" placeholder="🔍 Search by address, type..." oninput="renderUserReports()">
+        <select onchange="renderUserReports()" id="u-filter-status">
+          <option value="">All Statuses</option>
+          <option>Pending</option><option>Responded</option><option>Resolved</option><option>Cancelled</option>
+        </select>
+      </div>
+      <div id="user-reports-container"></div>
+    </div>
+
+    <!-- USER STATISTICS -->
+    <div id="user-status" class="page">
+      <div class="section-title">INCIDENT STATISTICS</div>
+      <div class="section-sub">Public statistics for Passi City fire and emergency incidents</div>
+      <div class="grid-4" style="margin-bottom:1.5rem" id="user-stat-cards"></div>
+      <div class="grid-2">
+        <div class="chart-box"><div class="card-title" style="margin-bottom:1rem">🔥 Incidents by Type</div><canvas id="uc-type"></canvas></div>
+        <div class="chart-box"><div class="card-title" style="margin-bottom:1rem">📅 Monthly Trend</div><canvas id="uc-monthly"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     ADMIN PORTAL
+════════════════════════════════════ -->
+<div id="screen-admin" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo-wrap">
+      <div class="topbar-logo">BFP <span>ADMIN</span></div>
+      <div class="topbar-sub">Passi City Bureau of Fire Protection</div>
+    </div>
+    <div class="topbar-nav">
+      <button class="nav-tab active" onclick="showAdminPage('admin-dashboard',this)">📊 Dashboard</button>
+      <button class="nav-tab" onclick="showAdminPage('admin-incidents',this)">🗂️ Incidents <span class="badge" id="pending-badge">0</span></button>
+      <button class="nav-tab" onclick="showAdminPage('admin-responders',this)">🚒 Responders</button>
+      <button class="nav-tab" onclick="showAdminPage('admin-analytics',this)">📈 Analytics</button>
+      <button class="nav-tab" onclick="showAdminPage('admin-settings',this)">⚙️ Settings</button>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="exitPortal()">← Logout</button>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div id="admin-dashboard" class="page active">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+        <div>
+          <div class="section-title">DASHBOARD</div>
+          <div class="section-sub" id="dash-datetime"></div>
+        </div>
+        <button class="btn btn-fire btn-sm" onclick="openAddIncident()">+ New Incident</button>
+      </div>
+      <div class="grid-4" id="dash-stat-cards" style="margin-bottom:1.5rem"></div>
+      <div class="grid-2" style="margin-bottom:1.5rem">
+        <div class="chart-box"><div class="card-title" style="margin-bottom:1rem">📅 Incidents This Year (Monthly)</div><canvas id="chart-monthly"></canvas></div>
+        <div class="chart-box"><div class="card-title" style="margin-bottom:1rem">🔥 Incidents by Type</div><canvas id="chart-type"></canvas></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">🕐 Recent Incidents</span><button class="btn btn-ghost btn-sm" onclick="showAdminPage('admin-incidents',document.querySelector('.nav-tab:nth-child(2))'))">View All →</button></div>
+          <div id="dash-recent"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">📋 Response Summary</span></div>
+          <div id="dash-summary"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INCIDENTS PAGE -->
+    <div id="admin-incidents" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div><div class="section-title">INCIDENT RECORDS</div><div class="section-sub">All reported incidents from citizen portal and manual entries</div></div>
+        <button class="btn btn-fire btn-sm" onclick="openAddIncident()">+ Add Incident</button>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchIncTab('all',this)">All</button>
+        <button class="tab-btn" onclick="switchIncTab('Pending',this)">Pending</button>
+        <button class="tab-btn" onclick="switchIncTab('Responded',this)">Responded</button>
+        <button class="tab-btn" onclick="switchIncTab('Resolved',this)">Resolved</button>
+        <button class="tab-btn" onclick="switchIncTab('Cancelled',this)">Cancelled</button>
+      </div>
+      <div class="filters">
+        <input type="text" id="a-search" placeholder="🔍 Search incidents..." oninput="renderAdminIncidents()">
+        <select id="a-type-filter" onchange="renderAdminIncidents()">
+          <option value="">All Types</option>
+          <option>Structure Fire</option><option>Vehicle Fire</option><option>Grass / Vegetation Fire</option>
+          <option>Electrical Fire</option><option>Gas Leak</option><option>Hazardous Materials</option>
+          <option>Rescue Operation</option><option>Medical Emergency</option><option>False Alarm</option><option>Other Emergency</option>
+        </select>
+        <select id="a-severity-filter" onchange="renderAdminIncidents()">
+          <option value="">All Severities</option>
+          <option>Critical – Life Threatening</option><option>High – Major Damage</option>
+          <option>Moderate – Contained</option><option>Low – Minor Incident</option>
+        </select>
+        <select id="a-brgy-filter" onchange="renderAdminIncidents()">
+          <option value="">All Barangays</option>
+          <option>Aglinab</option><option>Agtabo</option><option>Agtambo</option><option>Alimodias</option>
+          <option>Atabay</option><option>Ayaman</option><option>Bacuranan</option><option>Bagacay</option>
+          <option>Balud</option><option>Baybay</option><option>Buhay</option><option>Buyo</option>
+          <option>Cabunga</option><option>Calapawan</option><option>Callan</option><option>Canbanugan</option>
+          <option>Cansadan</option><option>Capilijan</option><option>Caseburan</option><option>Dagsaan</option>
+          <option>Dalicanan</option><option>Gines</option><option>Imbalbang</option><option>Imbang</option>
+          <option>Jagdong</option><option>Jalaud</option><option>Lanas</option><option>Langcaon</option>
+          <option>Lucasan</option><option>Mambiranan</option><option>Man-it</option><option>Mantulang</option>
+          <option>Maquiling</option><option>Nadsadan</option><option>Omio</option><option>Pandan</option>
+          <option>Paniamoran</option><option>Patag</option><option>Poblacion</option><option>Punong</option>
+          <option>Quiling Norte</option><option>Quiling Sur</option><option>Quipot</option><option>Rojas</option>
+          <option>Sablogon</option><option>Salngan</option><option>San Esteban</option><option>San Mateo</option>
+          <option>Sara</option><option>Serallo</option><option>Tady</option><option>Talongadian</option>
+          <option>Tigum</option><option>Tugas</option><option>Umingan</option><option>Union</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>Ref #</th><th>Date / Time</th><th>Type</th><th>Address / Barangay</th>
+          <th>Severity</th><th>Reporter</th><th>Status</th><th>Assigned To</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="incidents-tbody"></tbody>
+      </table></div>
+      <div style="margin-top:.75rem;font-size:12px;color:var(--muted)" id="incidents-count"></div>
+    </div>
+
+    <!-- RESPONDERS -->
+    <div id="admin-responders" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div><div class="section-title">RESPONDER MANAGEMENT</div><div class="section-sub">BFP personnel and fire truck registry</div></div>
+        <button class="btn btn-fire btn-sm" onclick="openAddResponder()">+ Add Responder</button>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">👮 Personnel Directory</span></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Name</th><th>Rank</th><th>Assignment</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="responders-tbody"></tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🚒 Fire Truck / Equipment Registry</span></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Unit</th><th>Type</th><th>Plate</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="trucks-tbody"></tbody>
+          </table></div>
+          <div style="margin-top:.75rem">
+            <button class="btn btn-outline btn-sm" onclick="openAddTruck()">+ Add Unit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div id="admin-analytics" class="page">
+      <div class="section-title">ANALYTICS & REPORTS</div>
+      <div class="section-sub">Comprehensive data analysis and incident reporting</div>
+      <div class="grid-4" id="analytics-stats" style="margin-bottom:1.5rem"></div>
+      <div class="grid-2" style="margin-bottom:1.5rem">
+        <div class="chart-box"><div class="card-title" style="margin-bottom:1rem">📊 Incident Status Breakdown</div><canvas id="chart-status"></canvas></div>
+        <div class="chart-box"><div class="card-title" style="margin-bottom:1rem">⚠️ Severity Distribution</div><canvas id="chart-severity"></canvas></div>
+      </div>
+      <div class="grid-2" style="margin-bottom:1.5rem">
+        <div class="chart-box"><div class="card-title" style="margin-bottom:1rem">📍 Top 10 Affected Barangays</div><canvas id="chart-barangay"></canvas></div>
+        <div class="chart-box"><div class="card-title" style="margin-bottom:1rem">🕐 Incidents by Time of Day</div><canvas id="chart-hour"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">📋 Cause Analysis</span></div>
+        <div id="cause-table"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="admin-settings" class="page">
+      <div class="section-title">SYSTEM SETTINGS</div>
+      <div class="section-sub">Manage system preferences and data</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">🔐 Change Admin Password</span></div>
+          <div class="form-group"><label>Current Password</label><input type="password" id="s-old" placeholder="••••••••"></div>
+          <div class="form-group"><label>New Password</label><input type="password" id="s-new" placeholder="••••••••"></div>
+          <div class="form-group"><label>Confirm Password</label><input type="password" id="s-confirm" placeholder="••••••••"></div>
+          <div id="s-alert"></div>
+          <button class="btn btn-fire btn-sm" onclick="changePassword()">Update Password</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">💾 Data Management</span></div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">All data is stored in your browser's localStorage. Export to backup, or clear to reset.</p>
+          <div style="display:flex;flex-direction:column;gap:.75rem">
+            <button class="btn btn-success btn-sm" onclick="exportAllData()">⬇ Export All Data (JSON)</button>
+            <button class="btn btn-info btn-sm" onclick="triggerImport()">⬆ Import Data (JSON)</button>
+            <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+            <button class="btn btn-danger btn-sm" onclick="confirmClearData()">🗑️ Clear All Records</button>
+          </div>
+          <div class="divider"></div>
+          <div id="data-stats-panel"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     MODALS
+════════════════════════════════════ -->
+
+<!-- Add/Edit Incident Modal -->
+<div class="modal-overlay" id="modal-incident">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-incident-title">🆕 Add New Incident</span>
+      <button class="modal-close" onclick="closeModal('modal-incident')">&times;</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Incident Type <span class="required">*</span></label>
+        <select id="m-type">
+          <option value="">Select</option>
+          <option>Structure Fire</option><option>Vehicle Fire</option><option>Grass / Vegetation Fire</option>
+          <option>Electrical Fire</option><option>Gas Leak</option><option>Hazardous Materials</option>
+          <option>Rescue Operation</option><option>Medical Emergency</option><option>False Alarm</option><option>Other Emergency</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Severity <span class="required">*</span></label>
+        <select id="m-severity">
+          <option value="">Select</option>
+          <option>Critical – Life Threatening</option><option>High – Major Damage</option>
+          <option>Moderate – Contained</option><option>Low – Minor Incident</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Date <span class="required">*</span></label><input type="date" id="m-date"></div>
+      <div class="form-group"><label>Time <span class="required">*</span></label><input type="time" id="m-time"></div>
+    </div>
+    <div class="form-group"><label>Address <span class="required">*</span></label><input type="text" id="m-address" placeholder="Street address"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Barangay <span class="required">*</span></label>
+        <select id="m-barangay">
+          <option value="">Select</option>
+          <option>Aglinab</option><option>Agtabo</option><option>Agtambo</option><option>Alimodias</option>
+          <option>Atabay</option><option>Ayaman</option><option>Bacuranan</option><option>Bagacay</option>
+          <option>Balud</option><option>Baybay</option><option>Buhay</option><option>Buyo</option>
+          <option>Cabunga</option><option>Calapawan</option><option>Callan</option><option>Canbanugan</option>
+          <option>Cansadan</option><option>Capilijan</option><option>Caseburan</option><option>Dagsaan</option>
+          <option>Dalicanan</option><option>Gines</option><option>Imbalbang</option><option>Imbang</option>
+          <option>Jagdong</option><option>Jalaud</option><option>Lanas</option><option>Langcaon</option>
+          <option>Lucasan</option><option>Mambiranan</option><option>Man-it</option><option>Mantulang</option>
+          <option>Maquiling</option><option>Nadsadan</option><option>Omio</option><option>Pandan</option>
+          <option>Paniamoran</option><option>Patag</option><option>Poblacion</option><option>Punong</option>
+          <option>Quiling Norte</option><option>Quiling Sur</option><option>Quipot</option><option>Rojas</option>
+          <option>Sablogon</option><option>Salngan</option><option>San Esteban</option><option>San Mateo</option>
+          <option>Sara</option><option>Serallo</option><option>Tady</option><option>Talongadian</option>
+          <option>Tigum</option><option>Tugas</option><option>Umingan</option><option>Union</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="m-status">
+          <option>Pending</option><option>Responded</option><option>Resolved</option><option>Cancelled</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Reporter Name</label><input type="text" id="m-reporter" placeholder="Name of reporter"></div>
+      <div class="form-group"><label>Contact Number</label><input type="text" id="m-contact" placeholder="09XX-XXX-XXXX"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Casualties / Injuries</label><input type="number" id="m-casualties" min="0" placeholder="0"></div>
+      <div class="form-group"><label>Estimated Damage (₱)</label><input type="number" id="m-damage" min="0" placeholder="0"></div>
+    </div>
+    <div class="form-group"><label>Possible Cause</label>
+      <select id="m-cause">
+        <option value="">Unknown</option>
+        <option>Electrical Fault / Short Circuit</option><option>Open Flame / Candle</option>
+        <option>Cooking Fire</option><option>Smoking Materials</option><option>Arson / Intentional</option>
+        <option>Gas Leak / Explosion</option><option>Lightning Strike</option>
+        <option>Children Playing with Fire</option><option>Mechanical Failure</option><option>Unknown</option><option>Other</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Fire Alarm Level</label>
+        <select id="m-alarm">
+          <option value="">Not Applicable</option>
+          <option>First Alarm</option><option>Second Alarm</option><option>Third Alarm</option>
+          <option>Fourth Alarm</option><option>General Alarm</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Fire Trucks Deployed</label><input type="number" id="m-trucks" min="0" placeholder="0"></div>
+    </div>
+    <div class="form-group"><label>Assigned Responder / Officer</label><input type="text" id="m-assigned" placeholder="Responding officer name"></div>
+    <div class="form-group"><label>Description / Notes</label><textarea id="m-notes" rows="3" placeholder="Incident description..."></textarea></div>
+    <div class="form-group"><label>Properties Affected</label><input type="text" id="m-properties" placeholder="Buildings, vehicles, etc."></div>
+    <input type="hidden" id="m-edit-id">
+    <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:.5rem">
+      <button class="btn btn-outline" onclick="closeModal('modal-incident')">Cancel</button>
+      <button class="btn btn-fire" onclick="saveIncident()">💾 Save Incident</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Incident Modal -->
+<div class="modal-overlay" id="modal-view-incident">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <span class="modal-title" id="view-inc-title">Incident Report</span>
+      <button class="modal-close" onclick="closeModal('modal-view-incident')">&times;</button>
+    </div>
+    <div id="view-inc-content"></div>
+  </div>
+</div>
+
+<!-- Add Responder Modal -->
+<div class="modal-overlay" id="modal-responder">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <span class="modal-title">👮 Add Responder</span>
+      <button class="modal-close" onclick="closeModal('modal-responder')">&times;</button>
+    </div>
+    <div class="form-group"><label>Full Name <span class="required">*</span></label><input type="text" id="resp-name" placeholder="e.g. SFO1 Juan Dela Cruz"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Rank</label>
+        <select id="resp-rank">
+          <option>Fire Marshal</option><option>Senior Fire Officer IV</option><option>Senior Fire Officer III</option>
+          <option>Senior Fire Officer II</option><option>Senior Fire Officer I</option>
+          <option>Fire Officer III</option><option>Fire Officer II</option><option>Fire Officer I</option>
+          <option>Volunteer</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="resp-status">
+          <option>Active / On Duty</option><option>Off Duty</option><option>On Leave</option><option>Inactive</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Assignment / Station</label><input type="text" id="resp-assignment" placeholder="e.g. Passi City Fire Station"></div>
+    <div class="form-group"><label>Contact Number</label><input type="tel" id="resp-contact" placeholder="09XX-XXX-XXXX"></div>
+    <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:.5rem">
+      <button class="btn btn-outline" onclick="closeModal('modal-responder')">Cancel</button>
+      <button class="btn btn-fire" onclick="saveResponder()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Truck Modal -->
+<div class="modal-overlay" id="modal-truck">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">🚒 Add Fire Unit</span>
+      <button class="modal-close" onclick="closeModal('modal-truck')">&times;</button>
+    </div>
+    <div class="form-group"><label>Unit Name <span class="required">*</span></label><input type="text" id="truck-name" placeholder="e.g. Passi BFP Unit 1"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Type</label>
+        <select id="truck-type">
+          <option>Pumper Truck</option><option>Tanker Truck</option><option>Ladder Truck</option>
+          <option>Rescue Truck</option><option>Ambulance</option><option>Command Vehicle</option>
+          <option>Utility Vehicle</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Plate Number</label><input type="text" id="truck-plate" placeholder="BFP-0001"></div>
+    </div>
+    <div class="form-group"><label>Status</label>
+      <select id="truck-status">
+        <option>Operational</option><option>On Deployment</option><option>Under Maintenance</option><option>Out of Service</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:.5rem">
+      <button class="btn btn-outline" onclick="closeModal('modal-truck')">Cancel</button>
+      <button class="btn btn-fire" onclick="saveTruck()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" style="position:fixed;bottom:1.5rem;right:1.5rem;background:var(--success);color:#fff;padding:12px 20px;border-radius:var(--radius);font-size:13px;font-weight:600;z-index:9999;display:none;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,.4)"></div>
+
+<script>
+/* ══════════════════════════════════════
+   DATABASE – localStorage wrapper
+══════════════════════════════════════ */
+const DB = {
+  get(key){ try{return JSON.parse(localStorage.getItem('bfp_'+key))||null}catch{return null} },
+  set(key,val){ localStorage.setItem('bfp_'+key,JSON.stringify(val)) },
+  del(key){ localStorage.removeItem('bfp_'+key) },
+  getIncidents(){ return this.get('incidents')||[] },
+  setIncidents(d){ this.set('incidents',d) },
+  getResponders(){ return this.get('responders')||[] },
+  setResponders(d){ this.set('responders',d) },
+  getTrucks(){ return this.get('trucks')||[] },
+  setTrucks(d){ this.set('trucks',d) },
+  getAdminPass(){ return this.get('admin_pass')||'bfp2024' },
+  setAdminPass(p){ this.set('admin_pass',p) },
+  getCreds(){ return this.get('creds')||{user:'admin',pass:'bfp2024'} },
+};
+
+/* Seed demo data if empty */
+function seedIfEmpty(){
+  if(DB.getIncidents().length>0) return;
+  const types=['Structure Fire','Vehicle Fire','Electrical Fire','Gas Leak','Rescue Operation','Medical Emergency','Grass / Vegetation Fire'];
+  const brgys=['Poblacion','Gines','Balud','Imbang','Bagacay','Rojas','Sara','Tigum','Jalaud','Baybay'];
+  const causes=['Electrical Fault / Short Circuit','Cooking Fire','Open Flame / Candle','Unknown','Gas Leak / Explosion'];
+  const statuses=['Pending','Responded','Resolved','Resolved','Resolved'];
+  const officers=['SFO1 Santos','FO2 Garcia','SFO2 Reyes','FO1 Lim'];
+  const incidents=[];
+  for(let i=0;i<18;i++){
+    const d=new Date(2025,Math.floor(Math.random()*12),Math.floor(Math.random()*28)+1);
+    incidents.push({
+      id:'INC-'+String(i+1).padStart(4,'0'),
+      type:types[Math.floor(Math.random()*types.length)],
+      severity:['Critical – Life Threatening','High – Major Damage','Moderate – Contained','Low – Minor Incident'][Math.floor(Math.random()*4)],
+      date:d.toISOString().split('T')[0],
+      time:String(Math.floor(Math.random()*24)).padStart(2,'0')+':'+String(Math.floor(Math.random()*60)).padStart(2,'0'),
+      address:(Math.floor(Math.random()*200)+1)+' '+['Rizal St','Mabini Ave','Quezon Blvd','Gen. Luna St','Burgos St'][Math.floor(Math.random()*5)],
+      barangay:brgys[Math.floor(Math.random()*brgys.length)],
+      reporter:['Maria Santos','Pedro Cruz','Ana Reyes','Luis Garcia','Carmen Lim'][Math.floor(Math.random()*5)],
+      contact:'09'+String(Math.floor(Math.random()*900000000)+100000000),
+      casualties:Math.floor(Math.random()*5),
+      damage:Math.floor(Math.random()*500000),
+      cause:causes[Math.floor(Math.random()*causes.length)],
+      alarm:['First Alarm','Second Alarm','','First Alarm'][Math.floor(Math.random()*4)],
+      trucks:Math.floor(Math.random()*4)+1,
+      assigned:officers[Math.floor(Math.random()*officers.length)],
+      status:statuses[Math.floor(Math.random()*statuses.length)],
+      notes:'Demo incident entry for testing.',
+      properties:'',
+      source:'admin',
+      createdAt:new Date(d).toISOString()
+    });
+  }
+  DB.setIncidents(incidents);
+  DB.setResponders([
+    {id:'r1',name:'FM Jose Reyes',rank:'Fire Marshal',assignment:'Passi City Fire Station',contact:'09171234567',status:'Active / On Duty'},
+    {id:'r2',name:'SFO2 Maria Santos',rank:'Senior Fire Officer II',assignment:'Passi City Fire Station',contact:'09182345678',status:'Active / On Duty'},
+    {id:'r3',name:'FO1 Pedro Garcia',rank:'Fire Officer I',assignment:'Passi City Fire Station',contact:'09193456789',status:'Off Duty'},
+    {id:'r4',name:'SFO1 Ana Cruz',rank:'Senior Fire Officer I',assignment:'Passi City Fire Station',contact:'09174567890',status:'Active / On Duty'},
+  ]);
+  DB.setTrucks([
+    {id:'t1',name:'Passi BFP Unit 1',type:'Pumper Truck',plate:'BFP-0001',status:'Operational'},
+    {id:'t2',name:'Passi BFP Unit 2',type:'Tanker Truck',plate:'BFP-0002',status:'Operational'},
+    {id:'t3',name:'Passi BFP Rescue 1',type:'Rescue Truck',plate:'BFP-0003',status:'Under Maintenance'},
+  ]);
+}
+
+/* ══════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════ */
+let currentIncTab='all';
+
+function enterPortal(role){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+role).classList.add('active');
+  if(role==='user') refreshUserStats();
+  if(role==='admin') refreshAdmin();
+}
+function exitPortal(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-landing').classList.add('active');
+}
+function showUserPage(id,btn){
+  document.querySelectorAll('#screen-user .page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('#screen-user .nav-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(id==='user-my-reports') renderUserReports();
+  if(id==='user-status') renderUserStats();
+}
+function showAdminPage(id,btn){
+  document.querySelectorAll('#screen-admin .page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('#screen-admin .nav-tab').forEach(t=>t.classList.remove('active'));
+  if(btn instanceof Element) btn.classList.add('active');
+  if(id==='admin-dashboard') refreshDashboard();
+  if(id==='admin-incidents') renderAdminIncidents();
+  if(id==='admin-responders') renderResponders();
+  if(id==='admin-analytics') renderAnalytics();
+  if(id==='admin-settings') renderDataStats();
+}
+function switchIncTab(tab,btn){
+  currentIncTab=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderAdminIncidents();
+}
+
+/* ══════════════════════════════════════
+   ADMIN LOGIN
+══════════════════════════════════════ */
+function showAdminLogin(){ openModal('modal-admin-login') }
+function doAdminLogin(){
+  const u=document.getElementById('login-user').value.trim();
+  const p=document.getElementById('login-pass').value;
+  const creds=DB.getCreds();
+  if(u==='admin' && p===DB.getAdminPass()||u===creds.user&&p===creds.pass||u==='admin'&&p==='bfp2024'){
+    closeModal('modal-admin-login');
+    enterPortal('admin');
+  } else {
+    document.getElementById('login-alert').innerHTML='<div class="alert alert-error">❌ Invalid credentials</div>';
+  }
+}
+
+/* ══════════════════════════════════════
+   MODALS
+══════════════════════════════════════ */
+function openModal(id){ document.getElementById(id).classList.add('open') }
+function closeModal(id){ document.getElementById(id).classList.remove('open') }
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background=type==='success'?'var(--success)':type==='error'?'var(--fire)':'var(--info)';
+  t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+
+/* ══════════════════════════════════════
+   INCIDENT ID GENERATOR
+══════════════════════════════════════ */
+function genId(){
+  const incs=DB.getIncidents();
+  const num=incs.length+1;
+  return 'INC-'+String(num).padStart(4,'0')+'-'+new Date().getFullYear();
+}
+
+/* ══════════════════════════════════════
+   USER: SUBMIT REPORT
+══════════════════════════════════════ */
+function submitReport(){
+  const alertEl=document.getElementById('report-alert');
+  const name=document.getElementById('r-name').value.trim();
+  const contact=document.getElementById('r-contact').value.trim();
+  const relation=document.getElementById('r-relation').value;
+  const type=document.getElementById('r-type').value;
+  const severity=document.getElementById('r-severity').value;
+  const date=document.getElementById('r-date').value;
+  const time=document.getElementById('r-time').value;
+  const address=document.getElementById('r-address').value.trim();
+  const barangay=document.getElementById('r-barangay').value;
+  const desc=document.getElementById('r-desc').value.trim();
+  if(!name||!contact||!relation||!type||!severity||!date||!time||!address||!barangay||!desc){
+    alertEl.innerHTML='<div class="alert alert-error">⚠️ Please fill in all required fields marked with *</div>';
+    alertEl.scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  const inc={
+    id:genId(),
+    type,severity,date,time,address,barangay,
+    reporter:name,contact,
+    email:document.getElementById('r-email').value,
+    relation,
+    desc,
+    casualties:parseInt(document.getElementById('r-casualties').value)||0,
+    damage:parseInt(document.getElementById('r-damage').value)||0,
+    properties:document.getElementById('r-properties').value,
+    cause:document.getElementById('r-cause').value,
+    alarm:document.getElementById('r-alarm').value,
+    trucks:parseInt(document.getElementById('r-trucks').value)||0,
+    bfpResponded:document.getElementById('r-bfp-responded').value,
+    notes:document.getElementById('r-notes').value,
+    status:'Pending',
+    assigned:'',
+    source:'citizen',
+    createdAt:new Date().toISOString()
+  };
+  const incs=DB.getIncidents();
+  incs.unshift(inc);
+  DB.setIncidents(incs);
+  alertEl.innerHTML=`<div class="alert alert-success">✅ Report submitted! Your reference number is <strong>${inc.id}</strong>. BFP will respond shortly.</div>`;
+  // Clear form
+  ['r-name','r-contact','r-email','r-address','r-desc','r-properties','r-casualties','r-damage','r-trucks','r-notes'].forEach(id=>document.getElementById(id).value='');
+  ['r-relation','r-type','r-severity','r-barangay','r-cause','r-alarm','r-bfp-responded'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('r-date').value='';document.getElementById('r-time').value='';
+  alertEl.scrollIntoView({behavior:'smooth'});
+}
+
+/* ══════════════════════════════════════
+   USER: MY REPORTS
+══════════════════════════════════════ */
+function renderUserReports(){
+  const search=(document.getElementById('u-search').value||'').toLowerCase();
+  const statusF=(document.getElementById('u-filter-status').value||'');
+  const incs=DB.getIncidents().filter(i=>i.source==='citizen');
+  const filtered=incs.filter(i=>{
+    const matchS=!statusF||i.status===statusF;
+    const matchQ=!search||(i.address+i.type+i.barangay+i.id).toLowerCase().includes(search);
+    return matchS&&matchQ;
+  });
+  const c=document.getElementById('user-reports-container');
+  if(!filtered.length){c.innerHTML='<div class="empty-state"><div class="ei">📋</div><h3>No reports found</h3><p>Submit your first incident report above.</p></div>';return;}
+  c.innerHTML=filtered.map(i=>`
+    <div class="card" style="margin-bottom:.75rem">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+            <span style="font-family:var(--font-cond);font-size:15px;font-weight:600;color:var(--white)">${i.id}</span>
+            ${statusPill(i.status)}
+            <span class="tag ${typeTag(i.type)}">${i.type}</span>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:.5rem">📍 ${i.address}, Brgy. ${i.barangay} &nbsp;|&nbsp; 📅 ${i.date} ${i.time}</div>
+          <div style="font-size:13px;color:var(--text)">${i.desc?i.desc.substring(0,120)+'...':''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:.25rem">Severity</div>
+          <div style="font-size:13px;font-weight:600;color:${severityColor(i.severity)}">${i.severity}</div>
+          ${i.assigned?`<div style="font-size:12px;color:var(--muted);margin-top:.5rem">👮 ${i.assigned}</div>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════
+   USER STATS
+══════════════════════════════════════ */
+function refreshUserStats(){
+  renderUserStats();
+}
+function renderUserStats(){
+  const incs=DB.getIncidents();
+  const total=incs.length;
+  const pending=incs.filter(i=>i.status==='Pending').length;
+  const responded=incs.filter(i=>i.status==='Responded').length;
+  const resolved=incs.filter(i=>i.status==='Resolved').length;
+  document.getElementById('user-stat-cards').innerHTML=`
+    <div class="stat-card red"><div class="stat-icon">🔥</div><div class="stat-label">Total Incidents</div><div class="stat-value">${total}</div></div>
+    <div class="stat-card gold"><div class="stat-icon">⏳</div><div class="stat-label">Pending</div><div class="stat-value">${pending}</div></div>
+    <div class="stat-card blue"><div class="stat-icon">🚒</div><div class="stat-label">Responded</div><div class="stat-value">${responded}</div></div>
+    <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-label">Resolved</div><div class="stat-value">${resolved}</div></div>`;
+  renderChart('uc-type','doughnut',typeChartData(incs));
+  renderChart('uc-monthly','bar',monthlyChartData(incs));
+}
+
+/* ══════════════════════════════════════
+   ADMIN: DASHBOARD
+══════════════════════════════════════ */
+function refreshAdmin(){
+  refreshDashboard();
+  updatePendingBadge();
+}
+function refreshDashboard(){
+  const now=new Date();
+  document.getElementById('dash-datetime').textContent=now.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' '+now.toLocaleTimeString('en-PH');
+  const incs=DB.getIncidents();
+  const total=incs.length;
+  const pending=incs.filter(i=>i.status==='Pending').length;
+  const resolved=incs.filter(i=>i.status==='Resolved').length;
+  const totalCasualties=incs.reduce((s,i)=>s+(parseInt(i.casualties)||0),0);
+  const totalDamage=incs.reduce((s,i)=>s+(parseInt(i.damage)||0),0);
+  const thisMonth=incs.filter(i=>i.date&&new Date(i.date).getMonth()===now.getMonth()&&new Date(i.date).getFullYear()===now.getFullYear()).length;
+  document.getElementById('dash-stat-cards').innerHTML=`
+    <div class="stat-card red"><div class="stat-icon">🔥</div><div class="stat-label">Total Incidents</div><div class="stat-value">${total}</div><div class="stat-delta up">${thisMonth} this month</div></div>
+    <div class="stat-card gold"><div class="stat-icon">⏳</div><div class="stat-label">Pending</div><div class="stat-value">${pending}</div><div class="stat-delta">Awaiting response</div></div>
+    <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-label">Resolved</div><div class="stat-value">${resolved}</div><div class="stat-delta">${total?Math.round(resolved/total*100):0}% resolution rate</div></div>
+    <div class="stat-card blue"><div class="stat-icon">🏥</div><div class="stat-label">Total Casualties</div><div class="stat-value">${totalCasualties}</div><div class="stat-delta">₱${totalDamage.toLocaleString()} est. damage</div></div>`;
+  renderChart('chart-monthly','bar',monthlyChartData(incs));
+  renderChart('chart-type','doughnut',typeChartData(incs));
+  // Recent incidents
+  const recent=incs.slice(0,6);
+  document.getElementById('dash-recent').innerHTML=recent.length?`
+    <ul class="timeline">${recent.map(i=>`<li class="tl-item"><div class="tl-dot"></div><div><div class="tl-time">${i.date} ${i.time} — ${i.barangay}</div><div class="tl-text">${i.type} · ${statusPill(i.status)}</div></div></li>`).join('')}</ul>`:'<div class="empty-state" style="padding:1rem"><p>No incidents yet.</p></div>';
+  // Summary
+  const byType={};incs.forEach(i=>{byType[i.type]=(byType[i.type]||0)+1});
+  const sorted=Object.entries(byType).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  document.getElementById('dash-summary').innerHTML=`
+    <table style="width:100%;font-size:13px">
+      ${sorted.map(([t,c])=>`<tr><td class="detail-value" style="padding:6px 0;border-top:1px solid var(--border)">${t}</td><td style="text-align:right;padding:6px 0;border-top:1px solid var(--border);color:var(--fire);font-weight:600">${c}</td></tr>`).join('')}
+    </table>`;
+}
+
+function updatePendingBadge(){
+  const p=DB.getIncidents().filter(i=>i.status==='Pending').length;
+  const b=document.getElementById('pending-badge');
+  if(b){b.textContent=p;b.style.display=p?'inline':'none'}
+}
+
+/* ══════════════════════════════════════
+   ADMIN: INCIDENT TABLE
+══════════════════════════════════════ */
+function renderAdminIncidents(){
+  const search=(document.getElementById('a-search').value||'').toLowerCase();
+  const typeF=document.getElementById('a-type-filter').value;
+  const sevF=document.getElementById('a-severity-filter').value;
+  const brgF=document.getElementById('a-brgy-filter').value;
+  let incs=DB.getIncidents();
+  if(currentIncTab!=='all') incs=incs.filter(i=>i.status===currentIncTab);
+  if(typeF) incs=incs.filter(i=>i.type===typeF);
+  if(sevF) incs=incs.filter(i=>i.severity===sevF);
+  if(brgF) incs=incs.filter(i=>i.barangay===brgF);
+  if(search) incs=incs.filter(i=>(i.id+i.address+i.type+i.barangay+i.reporter+i.status).toLowerCase().includes(search));
+  document.getElementById('incidents-count').textContent=`Showing ${incs.length} record(s)`;
+  const tb=document.getElementById('incidents-tbody');
+  tb.innerHTML=incs.length?incs.map(i=>`<tr>
+    <td><span style="font-family:var(--font-mono,monospace);font-size:12px;color:var(--fire)">${i.id}</span></td>
+    <td>${i.date}<br><span style="color:var(--muted);font-size:12px">${i.time}</span></td>
+    <td><span class="tag ${typeTag(i.type)}">${i.type}</span></td>
+    <td>${i.address}<br><span style="color:var(--muted);font-size:12px">Brgy. ${i.barangay}</span></td>
+    <td><span style="color:${severityColor(i.severity)};font-size:12px;font-weight:600">${i.severity.split('–')[0].trim()}</span></td>
+    <td>${i.reporter||'-'}<br><span style="color:var(--muted);font-size:12px">${i.contact||''}</span></td>
+    <td>${statusPill(i.status)}</td>
+    <td style="font-size:12px">${i.assigned||'<span style="color:var(--muted)">Unassigned</span>'}</td>
+    <td>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-ghost btn-sm" onclick="viewIncident('${i.id}')" title="View">👁</button>
+        <button class="btn btn-ghost btn-sm" onclick="editIncident('${i.id}')" title="Edit">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="updateStatus('${i.id}')" title="Update Status">🔄</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteIncident('${i.id}')" title="Delete" style="color:#E24B4A">🗑</button>
+      </div>
+    </td>
+  </tr>`).join(''):`<tr><td colspan="9"><div class="empty-state"><div class="ei">🗂️</div><h3>No incidents found</h3></div></td></tr>`;
+}
+
+/* ══════════════════════════════════════
+   INCIDENT CRUD
+══════════════════════════════════════ */
+function openAddIncident(){
+  document.getElementById('m-edit-id').value='';
+  document.getElementById('modal-incident-title').textContent='🆕 Add New Incident';
+  ['m-type','m-severity','m-date','m-time','m-address','m-barangay','m-reporter','m-contact','m-casualties','m-damage','m-cause','m-alarm','m-trucks','m-assigned','m-notes','m-properties'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.getElementById('m-status').value='Pending';
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('m-date').value=today;
+  openModal('modal-incident');
+}
+function editIncident(id){
+  const inc=DB.getIncidents().find(i=>i.id===id);if(!inc)return;
+  document.getElementById('m-edit-id').value=id;
+  document.getElementById('modal-incident-title').textContent='✏️ Edit Incident: '+id;
+  const map={'m-type':'type','m-severity':'severity','m-date':'date','m-time':'time','m-address':'address','m-barangay':'barangay','m-reporter':'reporter','m-contact':'contact','m-casualties':'casualties','m-damage':'damage','m-cause':'cause','m-alarm':'alarm','m-trucks':'trucks','m-assigned':'assigned','m-notes':'notes','m-properties':'properties','m-status':'status'};
+  Object.entries(map).forEach(([el,key])=>{const e=document.getElementById(el);if(e)e.value=inc[key]||''});
+  openModal('modal-incident');
+}
+function saveIncident(){
+  const editId=document.getElementById('m-edit-id').value;
+  const type=document.getElementById('m-type').value;
+  const date=document.getElementById('m-date').value;
+  const address=document.getElementById('m-address').value.trim();
+  const barangay=document.getElementById('m-barangay').value;
+  if(!type||!date||!address||!barangay){showToast('Fill in required fields','error');return;}
+  const inc={
+    id:editId||genId(),
+    type,severity:document.getElementById('m-severity').value,
+    date,time:document.getElementById('m-time').value,
+    address,barangay,
+    reporter:document.getElementById('m-reporter').value,
+    contact:document.getElementById('m-contact').value,
+    casualties:parseInt(document.getElementById('m-casualties').value)||0,
+    damage:parseInt(document.getElementById('m-damage').value)||0,
+    cause:document.getElementById('m-cause').value,
+    alarm:document.getElementById('m-alarm').value,
+    trucks:parseInt(document.getElementById('m-trucks').value)||0,
+    assigned:document.getElementById('m-assigned').value,
+    status:document.getElementById('m-status').value,
+    notes:document.getElementById('m-notes').value,
+    properties:document.getElementById('m-properties').value,
+    source:'admin',
+    createdAt:editId?undefined:new Date().toISOString()
+  };
+  const incs=DB.getIncidents();
+  if(editId){const idx=incs.findIndex(i=>i.id===editId);if(idx>-1){const old=incs[idx];incs[idx]={...old,...inc,createdAt:old.createdAt}}}
+  else{incs.unshift(inc)}
+  DB.setIncidents(incs);
+  closeModal('modal-incident');
+  renderAdminIncidents();
+  updatePendingBadge();
+  showToast(editId?'Incident updated!':'Incident added!');
+}
+function deleteIncident(id){
+  if(!confirm('Delete incident '+id+'?')) return;
+  const incs=DB.getIncidents().filter(i=>i.id!==id);
+  DB.setIncidents(incs);
+  renderAdminIncidents();
+  updatePendingBadge();
+  showToast('Incident deleted');
+}
+function viewIncident(id){
+  const inc=DB.getIncidents().find(i=>i.id===id);if(!inc)return;
+  document.getElementById('view-inc-title').textContent='📋 '+inc.id+' – '+inc.type;
+  document.getElementById('view-inc-content').innerHTML=`
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center">
+      ${statusPill(inc.status)}
+      <span class="tag ${typeTag(inc.type)}">${inc.type}</span>
+      <span style="color:${severityColor(inc.severity)};font-size:13px;font-weight:600">⚠️ ${inc.severity}</span>
+      ${inc.source==='citizen'?'<span class="tag tag-rescue">Citizen Report</span>':'<span class="tag tag-other">Admin Entry</span>'}
+    </div>
+    <div class="detail-grid">
+      <div><div class="detail-label">Date & Time</div><div class="detail-value">${inc.date} at ${inc.time}</div></div>
+      <div><div class="detail-label">Barangay</div><div class="detail-value">Brgy. ${inc.barangay}</div></div>
+      <div style="grid-column:1/-1"><div class="detail-label">Address</div><div class="detail-value">${inc.address}</div></div>
+      <div><div class="detail-label">Reporter</div><div class="detail-value">${inc.reporter||'—'}</div></div>
+      <div><div class="detail-label">Contact</div><div class="detail-value">${inc.contact||'—'}</div></div>
+      <div><div class="detail-label">Casualties / Injuries</div><div class="detail-value">${inc.casualties||0} person(s)</div></div>
+      <div><div class="detail-label">Estimated Damage</div><div class="detail-value">₱${(inc.damage||0).toLocaleString()}</div></div>
+      <div><div class="detail-label">Cause</div><div class="detail-value">${inc.cause||'Unknown'}</div></div>
+      <div><div class="detail-label">Fire Alarm Level</div><div class="detail-value">${inc.alarm||'N/A'}</div></div>
+      <div><div class="detail-label">Fire Trucks Deployed</div><div class="detail-value">${inc.trucks||0} unit(s)</div></div>
+      <div><div class="detail-label">Assigned Officer</div><div class="detail-value">${inc.assigned||'Unassigned'}</div></div>
+      ${inc.properties?`<div style="grid-column:1/-1"><div class="detail-label">Properties Affected</div><div class="detail-value">${inc.properties}</div></div>`:''}
+      ${inc.notes?`<div style="grid-column:1/-1"><div class="detail-label">Notes / Description</div><div class="detail-value">${inc.notes}</div></div>`:''}
+    </div>
+    <div class="divider"></div>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+      <button class="btn btn-fire btn-sm" onclick="editIncident('${inc.id}');closeModal('modal-view-incident')">✏️ Edit</button>
+      <select onchange="quickStatus('${inc.id}',this.value)" style="background:var(--navy-mid);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:6px 12px;font-size:13px">
+        <option value="">Update Status...</option>
+        <option>Pending</option><option>Responded</option><option>Resolved</option><option>Cancelled</option>
+      </select>
+    </div>`;
+  openModal('modal-view-incident');
+}
+function updateStatus(id){
+  const inc=DB.getIncidents().find(i=>i.id===id);if(!inc)return;
+  const next={Pending:'Responded',Responded:'Resolved',Resolved:'Pending',Cancelled:'Pending'}[inc.status];
+  const statuses=['Pending','Responded','Resolved','Cancelled'];
+  const chosen=statuses[(statuses.indexOf(inc.status)+1)%statuses.length];
+  if(!confirm(`Change status of ${id} to "${chosen}"?`)) return;
+  quickStatus(id,chosen);
+}
+function quickStatus(id,status){
+  if(!status) return;
+  const incs=DB.getIncidents();
+  const idx=incs.findIndex(i=>i.id===id);
+  if(idx>-1){incs[idx].status=status;DB.setIncidents(incs);}
+  renderAdminIncidents();
+  updatePendingBadge();
+  showToast('Status updated to '+status);
+}
+
+/* ══════════════════════════════════════
+   RESPONDERS
+══════════════════════════════════════ */
+function openAddResponder(){ document.getElementById('resp-name').value='';openModal('modal-responder') }
+function saveResponder(){
+  const name=document.getElementById('resp-name').value.trim();
+  if(!name){showToast('Enter responder name','error');return;}
+  const r={id:'r'+Date.now(),name,rank:document.getElementById('resp-rank').value,assignment:document.getElementById('resp-assignment').value,contact:document.getElementById('resp-contact').value,status:document.getElementById('resp-status').value};
+  const rs=DB.getResponders();rs.push(r);DB.setResponders(rs);
+  closeModal('modal-responder');renderResponders();showToast('Responder added!');
+}
+function deleteResponder(id){
+  if(!confirm('Remove this responder?')) return;
+  DB.setResponders(DB.getResponders().filter(r=>r.id!==id));
+  renderResponders();showToast('Responder removed');
+}
+function openAddTruck(){document.getElementById('truck-name').value='';openModal('modal-truck')}
+function saveTruck(){
+  const name=document.getElementById('truck-name').value.trim();
+  if(!name){showToast('Enter unit name','error');return;}
+  const t={id:'t'+Date.now(),name,type:document.getElementById('truck-type').value,plate:document.getElementById('truck-plate').value,status:document.getElementById('truck-status').value};
+  const ts=DB.getTrucks();ts.push(t);DB.setTrucks(ts);
+  closeModal('modal-truck');renderResponders();showToast('Unit added!');
+}
+function deleteTruck(id){
+  if(!confirm('Remove this unit?')) return;
+  DB.setTrucks(DB.getTrucks().filter(t=>t.id!==id));
+  renderResponders();showToast('Unit removed');
+}
+function renderResponders(){
+  const responders=DB.getResponders();
+  const trucks=DB.getTrucks();
+  const tb=document.getElementById('responders-tbody');
+  tb.innerHTML=responders.length?responders.map(r=>`<tr>
+    <td>${r.name}</td><td style="font-size:12px;color:var(--muted)">${r.rank}</td>
+    <td style="font-size:12px">${r.assignment}</td>
+    <td><span class="tag ${r.status.includes('Active')?'tag-rescue':'tag-other'}">${r.status.split('/')[0].trim()}</span></td>
+    <td><button class="btn btn-ghost btn-sm" onclick="deleteResponder('${r.id}')" style="color:#E24B4A">🗑</button></td>
+  </tr>`).join(''):`<tr><td colspan="5"><div class="empty-state" style="padding:1rem"><p>No personnel added yet.</p></div></td></tr>`;
+  const tb2=document.getElementById('trucks-tbody');
+  tb2.innerHTML=trucks.length?trucks.map(t=>`<tr>
+    <td>${t.name}</td><td style="font-size:12px;color:var(--muted)">${t.type}</td>
+    <td style="font-size:12px;font-family:monospace">${t.plate}</td>
+    <td><span class="tag ${t.status==='Operational'?'tag-rescue':t.status==='On Deployment'?'tag-fire':'tag-other'}">${t.status}</span></td>
+    <td><button class="btn btn-ghost btn-sm" onclick="deleteTruck('${t.id}')" style="color:#E24B4A">🗑</button></td>
+  </tr>`).join(''):`<tr><td colspan="5"><div class="empty-state" style="padding:1rem"><p>No units added yet.</p></div></td></tr>`;
+}
+
+/* ══════════════════════════════════════
+   ANALYTICS
+══════════════════════════════════════ */
+function renderAnalytics(){
+  const incs=DB.getIncidents();
+  const total=incs.length;
+  const resolved=incs.filter(i=>i.status==='Resolved').length;
+  const casualties=incs.reduce((s,i)=>s+(parseInt(i.casualties)||0),0);
+  const damage=incs.reduce((s,i)=>s+(parseInt(i.damage)||0),0);
+  document.getElementById('analytics-stats').innerHTML=`
+    <div class="stat-card red"><div class="stat-icon">📂</div><div class="stat-label">Total Records</div><div class="stat-value">${total}</div></div>
+    <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-label">Resolved</div><div class="stat-value">${resolved}</div><div class="stat-delta">${total?Math.round(resolved/total*100):0}% rate</div></div>
+    <div class="stat-card gold"><div class="stat-icon">🏥</div><div class="stat-label">Casualties</div><div class="stat-value">${casualties}</div></div>
+    <div class="stat-card blue"><div class="stat-icon">💰</div><div class="stat-label">Est. Damage</div><div class="stat-value" style="font-size:28px">₱${(damage/1000).toFixed(0)}K</div></div>`;
+  renderChart('chart-status','doughnut',statusChartData(incs));
+  renderChart('chart-severity','bar',severityChartData(incs));
+  renderChart('chart-barangay','bar',barangayChartData(incs));
+  renderChart('chart-hour','bar',hourChartData(incs));
+  // Cause table
+  const causes={};incs.forEach(i=>{if(i.cause)causes[i.cause]=(causes[i.cause]||0)+1});
+  const cs=Object.entries(causes).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('cause-table').innerHTML=cs.length?`
+    <table style="width:100%;font-size:13px">
+      <thead><tr><th>Cause</th><th>Count</th><th>%</th></tr></thead>
+      <tbody>${cs.map(([c,n])=>`<tr><td class="detail-value">${c}</td><td style="color:var(--fire);font-weight:600">${n}</td><td style="color:var(--muted)">${total?Math.round(n/total*100):0}%</td></tr>`).join('')}</tbody>
+    </table>`:'<div class="empty-state" style="padding:1rem"><p>No cause data available.</p></div>';
+}
+
+/* ══════════════════════════════════════
+   CHARTS
+══════════════════════════════════════ */
+const chartInstances={};
+function renderChart(id,type,data){
+  const canvas=document.getElementById(id);
+  if(!canvas)return;
+  if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id]}
+  const defaults={color:'rgba(232,239,249,.7)',borderColor:'rgba(232,239,249,.1)',grid:{color:'rgba(255,255,255,.05)'}};
+  chartInstances[id]=new Chart(canvas,{type,data,options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'rgba(232,239,249,.7)',font:{size:11}}},tooltip:{backgroundColor:'rgba(11,28,46,.95)',titleColor:'#E8EFF9',bodyColor:'#8A9BB0'}},scales:type==='doughnut'?{}:{x:{ticks:{color:'#8A9BB0',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#8A9BB0',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}}}});
+}
+function monthlyChartData(incs){
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const year=new Date().getFullYear();
+  const counts=Array(12).fill(0);
+  incs.forEach(i=>{if(i.date&&new Date(i.date).getFullYear()===year)counts[new Date(i.date).getMonth()]++});
+  return{labels:months,datasets:[{label:'Incidents',data:counts,backgroundColor:'rgba(217,48,37,.7)',borderColor:'#D93025',borderWidth:1,borderRadius:4}]};
+}
+function typeChartData(incs){
+  const types={};incs.forEach(i=>types[i.type]=(types[i.type]||0)+1);
+  const colors=['#D93025','#F5A623','#1565C0','#1E8C45','#7B0DB8','#00838F','#E65100','#37474F'];
+  const labels=Object.keys(types);
+  return{labels,datasets:[{data:Object.values(types),backgroundColor:labels.map((_,i)=>colors[i%colors.length]),borderWidth:0}]};
+}
+function statusChartData(incs){
+  const s={Pending:0,Responded:0,Resolved:0,Cancelled:0};
+  incs.forEach(i=>s[i.status]=(s[i.status]||0)+1);
+  return{labels:Object.keys(s),datasets:[{data:Object.values(s),backgroundColor:['#F5A623','#1565C0','#1E8C45','#444'],borderWidth:0}]};
+}
+function severityChartData(incs){
+  const sevs={'Critical – Life Threatening':0,'High – Major Damage':0,'Moderate – Contained':0,'Low – Minor Incident':0};
+  incs.forEach(i=>sevs[i.severity]=(sevs[i.severity]||0)+1);
+  return{labels:Object.keys(sevs).map(s=>s.split('–')[0].trim()),datasets:[{label:'Count',data:Object.values(sevs),backgroundColor:['#D93025','#F5A623','#1565C0','#1E8C45'],borderWidth:0,borderRadius:4}]};
+}
+function barangayChartData(incs){
+  const brgys={};incs.forEach(i=>brgys[i.barangay]=(brgys[i.barangay]||0)+1);
+  const sorted=Object.entries(brgys).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  return{labels:sorted.map(([b])=>b),datasets:[{label:'Incidents',data:sorted.map(([,c])=>c),backgroundColor:'rgba(245,166,35,.7)',borderColor:'#F5A623',borderWidth:1,borderRadius:4}]};
+}
+function hourChartData(incs){
+  const hours=Array(24).fill(0);
+  incs.forEach(i=>{if(i.time){const h=parseInt(i.time.split(':')[0]);if(!isNaN(h))hours[h]++}});
+  return{labels:Array.from({length:24},(_,i)=>`${String(i).padStart(2,'0')}:00`),datasets:[{label:'Incidents',data:hours,backgroundColor:'rgba(21,101,192,.6)',borderColor:'#1565C0',borderWidth:1,borderRadius:2}]};
+}
+
+/* ══════════════════════════════════════
+   SETTINGS
+══════════════════════════════════════ */
+function changePassword(){
+  const old=document.getElementById('s-old').value;
+  const n=document.getElementById('s-new').value;
+  const c=document.getElementById('s-confirm').value;
+  const alertEl=document.getElementById('s-alert');
+  if(old!==DB.getAdminPass()){alertEl.innerHTML='<div class="alert alert-error">Current password incorrect.</div>';return;}
+  if(n.length<6){alertEl.innerHTML='<div class="alert alert-error">Password must be at least 6 characters.</div>';return;}
+  if(n!==c){alertEl.innerHTML='<div class="alert alert-error">Passwords do not match.</div>';return;}
+  DB.setAdminPass(n);
+  alertEl.innerHTML='<div class="alert alert-success">✅ Password updated successfully.</div>';
+  document.getElementById('s-old').value='';document.getElementById('s-new').value='';document.getElementById('s-confirm').value='';
+}
+function exportAllData(){
+  const data={incidents:DB.getIncidents(),responders:DB.getResponders(),trucks:DB.getTrucks(),exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='BFP_Backup_'+new Date().toISOString().split('T')[0]+'.json';a.click();
+  showToast('Data exported!');
+}
+function triggerImport(){document.getElementById('import-file').click()}
+function importData(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(data.incidents)DB.setIncidents(data.incidents);
+      if(data.responders)DB.setResponders(data.responders);
+      if(data.trucks)DB.setTrucks(data.trucks);
+      showToast('Data imported successfully!');
+      renderDataStats();
+    }catch{showToast('Invalid JSON file','error')}
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+function confirmClearData(){
+  if(!confirm('WARNING: This will permanently delete ALL incident records, responders, and units. This cannot be undone. Continue?')) return;
+  if(!confirm('Are you absolutely sure? ALL DATA WILL BE LOST.')) return;
+  DB.del('incidents');DB.del('responders');DB.del('trucks');
+  showToast('All data cleared');renderDataStats();
+}
+function renderDataStats(){
+  const incs=DB.getIncidents();
+  const resp=DB.getResponders();
+  const trucks=DB.getTrucks();
+  document.getElementById('data-stats-panel').innerHTML=`
+    <div class="detail-row"><div class="detail-label">Total Incident Records</div><div class="detail-value">${incs.length}</div></div>
+    <div class="detail-row"><div class="detail-label">Total Responders</div><div class="detail-value">${resp.length}</div></div>
+    <div class="detail-row"><div class="detail-label">Total Units / Trucks</div><div class="detail-value">${trucks.length}</div></div>
+    <div class="detail-row"><div class="detail-label">Storage Used</div><div class="detail-value">${(JSON.stringify(incs).length/1024).toFixed(1)} KB</div></div>`;
+}
+function exportCSV(){
+  const incs=DB.getIncidents();
+  const headers=['ID','Type','Severity','Date','Time','Address','Barangay','Reporter','Contact','Casualties','Damage','Cause','Alarm','Trucks','Assigned','Status','Notes','Source'];
+  const rows=incs.map(i=>[i.id,i.type,i.severity,i.date,i.time,'"'+i.address+'"',i.barangay,'"'+i.reporter+'"',i.contact,i.casualties||0,i.damage||0,'"'+(i.cause||'')+'"',i.alarm||'',i.trucks||0,'"'+(i.assigned||'')+'"',i.status,'"'+(i.notes||'').replace(/"/g,"'")+'"',i.source]);
+  const csv=[headers,...rows].map(r=>r.join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='BFP_Incidents_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+  showToast('CSV exported!');
+}
+
+/* ══════════════════════════════════════
+   HELPERS
+══════════════════════════════════════ */
+function statusPill(s){
+  const map={Pending:'pill-pending',Responded:'pill-responded',Resolved:'pill-resolved',Cancelled:'pill-cancelled'};
+  return`<span class="status-pill ${map[s]||'pill-cancelled'}">${s}</span>`;
+}
+function typeTag(t){
+  if(!t)return 'tag-other';
+  const l=t.toLowerCase();
+  if(l.includes('fire')||l.includes('electrical')||l.includes('gas'))return 'tag-fire';
+  if(l.includes('rescue'))return 'tag-rescue';
+  if(l.includes('medical'))return 'tag-medical';
+  if(l.includes('hazard'))return 'tag-hazmat';
+  return 'tag-other';
+}
+function severityColor(s){
+  if(!s)return 'var(--muted)';
+  if(s.includes('Critical'))return '#D93025';
+  if(s.includes('High'))return '#F5A623';
+  if(s.includes('Moderate'))return '#1565C0';
+  return '#1E8C45';
+}
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+seedIfEmpty();
+// Set today's date as default on user form
+document.getElementById('r-date').value=new Date().toISOString().split('T')[0];
+document.getElementById('r-time').value=new Date().toTimeString().slice(0,5);
+// Clock update
+setInterval(()=>{
+  const el=document.getElementById('dash-datetime');
+  if(el){const n=new Date();el.textContent=n.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' '+n.toLocaleTimeString('en-PH')}
+},60000);
+</script>
+</body>
+</html>
